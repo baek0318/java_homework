@@ -18,22 +18,27 @@ public class CalculatorConcurrentClient {
         int port = Integer.parseInt(args[1]);
 
         try (Socket socket = new Socket(host, port)) {
-
-            OutputStream outputStream = socket.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-            System.out.println("수식을 입력해주세 (eg. + 3 8)");
-            Scanner sc = new Scanner(System.in);
-            String expression = sc.nextLine();
-            for(int i = 0; i < 30; i++) {
-                writer.write(expression+"\n");
-                writer.flush();
-            }
-
             InputStream inputStream = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String receive = reader.readLine();
-            System.out.println(receive);
+            OutputStream outputStream = socket.getOutputStream();
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+            Scanner sc = new Scanner(System.in);
+            System.out.println("이름을 입력해 주세요");
+            String name = sc.nextLine();
+            writer.write(name+"\n");
+            writer.flush();
 
+            while(true){
+                System.out.println("수식을 입력해주세요 (eg. + 3 8)");
+                String expression = sc.nextLine();
+                for(int i = 0; i < 500; i++){
+                    writer.write(expression + "\n");
+                    writer.flush();
+
+                    String receive = reader.readLine();
+                    System.out.println(receive);
+                }
+            }
         }
         catch (UnknownHostException error) {
             System.out.println("Server not found");

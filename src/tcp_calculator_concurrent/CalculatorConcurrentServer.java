@@ -40,37 +40,59 @@ public class CalculatorConcurrentServer {
 }
 
 class MultiClient implements Runnable {
-    private final Socket socket;
-    private final InetAddress ADRESS;
+    private Socket socket;
+    private InputStream in;
+    private OutputStream out;
 
-    MultiClient(Socket socket) {
-        this.socket = socket;
-        this.ADRESS = socket.getInetAddress();
+    MultiClient(Socket socket){
+        try {
+            this.socket = socket;
+            this.in = socket.getInputStream();
+            this.out = socket.getOutputStream();
+        }
+        catch(IOException error){
+            error.printStackTrace();
+        }
     }
-
     @Override
     public void run() {
         try {
-            System.out.println("client "+ADRESS+" is connected");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            String name = insertName(reader);
+            if(name == null) return;
 
-            InputStream inputStream = socket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String receive = reader.readLine();
-            System.out.println("server recevied expression : "+ receive);
-            int result = parseExpNCal(receive);
+            while(true) {
+                String receive = reader.readLine();
+                if(receive.equals("q")) {
+                    break;
+                }
+                System.out.println("server recevied expression : "+ receive);
+                int result = parseExpNCal(receive);
 
-            OutputStream outputStream = socket.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-            writer.write("("+ADRESS+")"+"result : "+result+"\n");
-            writer.flush();
-
-            System.out.println("client "+ADRESS+"is disconnected");
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+                writer.write("("+name+")"+"result : "+result+"\n");
+                writer.flush();
+            }
+            System.out.println("client "+name+" is disconnected");
             socket.close();
         }
         catch (IOException error) {
             System.out.println(error.getCause().toString());
             error.printStackTrace();
         }
+    }
+
+    private String insertName(BufferedReader reader){
+        String name;
+        try {
+            name = reader.readLine();
+            System.out.println("client "+name+" is connect");
+        }
+        catch (IOException error){
+            error.printStackTrace();
+            return null;
+        }
+        return name;
     }
 
     private int parseExpNCal(String exp) {
